@@ -120,8 +120,8 @@ public class ArtistTopTracksActivity extends AppCompatActivity {
 
     private void setupToolbar() {
         ActionBar actionBar = getSupportActionBar();
-        actionBar.setTitle(mArtistName);
-        actionBar.setSubtitle(R.string.top_ten_tracks);
+        actionBar.setTitle(R.string.top_ten_tracks);
+        actionBar.setSubtitle(mArtistName);
 
         actionBar.setDisplayHomeAsUpEnabled(true);
     }
