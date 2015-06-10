@@ -6,6 +6,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -16,6 +17,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +52,9 @@ public class ArtistTopTracksActivity extends AppCompatActivity {
     @InjectView(R.id.top_tracks_list) ListView mTopTracksListView;
     @InjectView(R.id.throbber) ProgressBar mProgressBar;
 
+    /**
+     * Intent factory
+     */
     public static Intent launchIntent(Context context, String artistId, String artistName) {
         Intent launchIntent = new Intent(context, ArtistTopTracksActivity.class);
         launchIntent.putExtra(ARTIST_ID, artistId);
@@ -57,6 +62,9 @@ public class ArtistTopTracksActivity extends AppCompatActivity {
         return launchIntent;
     }
 
+    /**
+     * Lifecycle methods
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -76,20 +84,6 @@ public class ArtistTopTracksActivity extends AppCompatActivity {
             searchTopTracks();
         else
             hideLoading();
-    }
-
-    private void searchTopTracks() {
-        cancelSearch();
-
-        mCurrentTask = new GetArtistTopTracksTask();
-        mCurrentTask.execute(mArtistId);
-    }
-
-    private void cancelSearch() {
-        if(mCurrentTask == null)
-            return;
-
-        mCurrentTask.cancel(false);
     }
 
     @Override
@@ -112,12 +106,35 @@ public class ArtistTopTracksActivity extends AppCompatActivity {
 
         String jsonTopTracks = savedInstanceState.getString(TOP_TRACKS_RESULTS);
         if(jsonTopTracks != null) {
+
             Type type = new TypeToken<List<Track>>(){}.getType();
             mTopTracksList = new Gson().fromJson(jsonTopTracks, type);
+
+            if(mTopTracksList == null)
+                mTopTracksList = new ArrayList<>();
+
             showTopTracks();
         }
     }
 
+    /**
+     * Menu methods
+     */
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == android.R.id.home) {
+            this.finish();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    /**
+     * Ui methods
+     */
     private void setupToolbar() {
         ActionBar actionBar = getSupportActionBar();
         actionBar.setTitle(R.string.top_ten_tracks);
@@ -128,6 +145,23 @@ public class ArtistTopTracksActivity extends AppCompatActivity {
 
     private void hideLoading() {
         mProgressBar.setVisibility(View.GONE);
+    }
+
+    /**
+     * Task methods
+     */
+    private void searchTopTracks() {
+        cancelSearch();
+
+        mCurrentTask = new GetArtistTopTracksTask();
+        mCurrentTask.execute(mArtistId);
+    }
+
+    private void cancelSearch() {
+        if(mCurrentTask == null)
+            return;
+
+        mCurrentTask.cancel(false);
     }
 
     class GetArtistTopTracksTask extends AsyncTask<String, Void, List<Track>> {
@@ -179,6 +213,5 @@ public class ArtistTopTracksActivity extends AppCompatActivity {
         mAdapter.setTopTracksList(mTopTracksList);
         mTopTracksListView.setAdapter(mAdapter);
     }
-
 
 }
