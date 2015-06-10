@@ -38,7 +38,7 @@ public class ArtistSearchResultsAdapter extends BaseAdapter {
     }
 
     public void setArtistsList(List<Artist> artistsList) {
-        mArtistsList = artistsList != null ? artistsList : new ArrayList<Artist>() ;
+        mArtistsList = artistsList;
         notifyDataSetChanged();
     }
 

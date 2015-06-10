@@ -40,19 +40,20 @@ public class ArtistSearchActivity extends AppCompatActivity {
     //Constants
     public static final String SEARCH_RESULTS = "search_results";
     public static final int SEARCH_DELAY = 500;
-    public static final String LAST_SEARCH_QUERY_STRING = "last_search_query_string";
 
     //Variables
     SearchArtistTask mCurrentTask;
     ArtistSearchResultsAdapter mAdapter;
     List<Artist> mArtistsList;
-    String mLastSearchQueryString;
 
     //Controls
     @InjectView(R.id.search_input) EditText mSearchInput;
     @InjectView(R.id.search_results) ListView mSearchResultsListView;
     @InjectView(R.id.throbber) ProgressBar mProgressBar;
 
+    /**
+     * Lifecycle methods
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -97,39 +98,27 @@ public class ArtistSearchActivity extends AppCompatActivity {
         cancelSearch();
     }
 
-    private void searchArtists() {
-        cancelSearch();
-
-        showLoading();
-        mCurrentTask = new SearchArtistTask();
-        mCurrentTask.execute(mSearchInput.getText().toString());
-    }
-
-    private void cancelSearch() {
-        if(mCurrentTask == null)
-            return;
-        mCurrentTask.cancel(false);
-    }
-
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
 
         String jsonSearchResults = new Gson ().toJson(mArtistsList);
         outState.putString(SEARCH_RESULTS, jsonSearchResults);
-        outState.putString(LAST_SEARCH_QUERY_STRING, mLastSearchQueryString);
     }
 
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
 
-        mLastSearchQueryString = savedInstanceState.getString(LAST_SEARCH_QUERY_STRING);
-
         String jsonSearchResults = savedInstanceState.getString(SEARCH_RESULTS);
         if(jsonSearchResults != null) {
+
             Type type = new TypeToken<List<Artist>>() {}.getType();
             mArtistsList = new Gson().fromJson(jsonSearchResults, type);
+
+            if(mArtistsList == null)
+                mArtistsList = new ArrayList<>();
+
             showResults();
         }
     }
@@ -148,15 +137,28 @@ public class ArtistSearchActivity extends AppCompatActivity {
         mProgressBar.setVisibility(View.GONE);
     }
 
+    /**
+     * Artist search methods
+     */
+    private void searchArtists() {
+        cancelSearch();
+
+        showLoading();
+        mCurrentTask = new SearchArtistTask();
+        mCurrentTask.execute(mSearchInput.getText().toString());
+    }
+
+    private void cancelSearch() {
+        if(mCurrentTask == null)
+            return;
+        mCurrentTask.cancel(false);
+    }
+
     class SearchArtistTask extends AsyncTask<String, Void, List<Artist>> {
         @Override
         protected List<Artist> doInBackground(String... strings) {
             //Get search input
             String queryString = strings[0];
-
-            //Check if previous search done
-            if(mLastSearchQueryString != null && mLastSearchQueryString.equals(queryString))
-                return mArtistsList;
 
             //Delay search if user is typing
             try {
@@ -195,18 +197,14 @@ public class ArtistSearchActivity extends AppCompatActivity {
                 return;
             }
 
-            //Hold last search query string
-            mLastSearchQueryString = mSearchInput.getText().toString();
-
-            //Get artist
-            mArtistsList = artistsList;
-            showResults();
-
             //No Artists found. List has zero items and search input length greater than zero
             if(artistsList.size() == 0 && mSearchInput.getText().toString().length() > 0) {
                 Toast.makeText(ArtistSearchActivity.this, R.string.no_artists_found, Toast.LENGTH_LONG).show();
             }
 
+            //Get artists
+            mArtistsList = artistsList;
+            showResults();
         }
     }
 }
