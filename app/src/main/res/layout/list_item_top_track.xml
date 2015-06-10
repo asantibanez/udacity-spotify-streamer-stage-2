@@ -4,13 +4,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="16dp">
+    android:padding="@dimen/list_item_padding">
 
     <ImageView
         android:id="@+id/thumbnail"
-        android:layout_width="72dp"
-        android:layout_height="72dp"
-        android:background="#ccc"/>
+        android:layout_width="@dimen/thumbnail_size"
+        android:layout_height="@dimen/thumbnail_size"
+        android:background="@color/thumbnail_background"/>
 
     <LinearLayout
         android:layout_width="wrap_content"
