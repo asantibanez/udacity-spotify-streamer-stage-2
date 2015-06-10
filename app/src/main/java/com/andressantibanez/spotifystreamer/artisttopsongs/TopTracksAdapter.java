@@ -1,7 +1,6 @@
 package com.andressantibanez.spotifystreamer.artisttopsongs;
 
 import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,6 +9,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.andressantibanez.spotifystreamer.R;
+import com.andressantibanez.spotifystreamer.Utils;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
@@ -17,7 +17,6 @@ import java.util.List;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
-import kaaes.spotify.webapi.android.models.Image;
 import kaaes.spotify.webapi.android.models.Track;
 
 public class TopTracksAdapter extends BaseAdapter{
@@ -72,10 +71,10 @@ public class TopTracksAdapter extends BaseAdapter{
         String thumbnailUrl = null;
         if(track.album.images.size() > 0) {
             //Try getting 200px first
-            thumbnailUrl = getThumbnailUrl(track.album.images, 200);
+            thumbnailUrl = Utils.getThumbnailUrl(track.album.images, 200);
             //If none found, try anyone
             if(thumbnailUrl == null)
-                thumbnailUrl = getThumbnailUrl(track.album.images, 0);
+                thumbnailUrl = Utils.getThumbnailUrl(track.album.images, 0);
         }
 
         //Apply data to layuot
@@ -88,25 +87,6 @@ public class TopTracksAdapter extends BaseAdapter{
         holder.albumName.setText(track.album.name);
 
         return convertView;
-    }
-
-    public String getThumbnailUrl(List<Image> imagesList, int requiredSize) {
-        String thumbnailUrl = null;
-
-        Image image;
-        int imageSize;
-
-        //Image sizes come bigger first, small last
-        for(int i = imagesList.size() - 1; i >= 0; i--) {
-            image = imagesList.get(i);
-            imageSize = Math.max(image.height, image.width);
-            if(imageSize >= requiredSize) {
-                thumbnailUrl = image.url;
-                break;
-            }
-        }
-
-        return thumbnailUrl;
     }
 
     public void setTopTracksList(List<Track> topTracksList) {

@@ -1,7 +1,6 @@
 package com.andressantibanez.spotifystreamer.artistsearch;
 
 import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,7 +9,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.andressantibanez.spotifystreamer.R;
-import com.google.gson.Gson;
+import com.andressantibanez.spotifystreamer.Utils;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
@@ -19,7 +18,6 @@ import java.util.List;
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 import kaaes.spotify.webapi.android.models.Artist;
-import kaaes.spotify.webapi.android.models.Image;
 
 public class ArtistSearchResultsAdapter extends BaseAdapter {
 
@@ -72,15 +70,28 @@ public class ArtistSearchResultsAdapter extends BaseAdapter {
             convertView.setTag(holder);
         }
 
+        //Get artist
         Artist artist = mArtistsList.get(position);
+
+        //Get thumbnailUrl
+        String thumbnailUrl = null;
+        if(artist.images.size() > 0) {
+            //Try 200px image
+            thumbnailUrl = Utils.getThumbnailUrl(artist.images, 200);
+            //Get first available
+            if(thumbnailUrl == null) {
+                thumbnailUrl = Utils.getThumbnailUrl(artist.images, 0);
+            }
+        }
+
+        //Apply data to layout
+        if(thumbnailUrl != null)
+            Picasso.with(mContext).load(thumbnailUrl).into(holder.thumbnail);
+        else
+            holder.thumbnail.setImageBitmap(null);
 
         holder.name.setText(artist.name);
 
-        List<Image> images = artist.images;
-        if(images.size() > 0)
-            Picasso.with(mContext).load(images.get(0).url).into(holder.thumbnail);
-        else
-            holder.thumbnail.setImageBitmap(null);
 
         return convertView;
     }
