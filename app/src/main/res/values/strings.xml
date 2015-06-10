@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">Spotify Streamer</string>
+
+    <string name="search_artist">Search Artist</string>
+    <string name="top_ten_tracks">Top 10 Tracks</string>
+    <string name="no_artists_found">No artists found. Try searching with another name.</string>
+    <string name="network_error_try_again">Error retrieving data. Please check your network status and try again.</string>
+    <string name="no_top_tracks_found">No Top Tracks found for Artist.</string>
+
 </resources>

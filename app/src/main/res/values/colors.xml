@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="thumbnail_background">#DDDDDD</color>
+
+    <color name="color_primary">#558B2F</color>
+    <color name="color_primary_dark">#33691E</color>
+    <color name="color_accent">#FF9800</color>
+
+    <color name="window_background">#FFF5F5F5</color>
+
+</resources>
