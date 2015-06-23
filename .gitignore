@@ -24,7 +24,6 @@ bin/
 gen/
 
 # Gradle files
-gradlew.bat
 .gradle/
 build/
 /*/build/
