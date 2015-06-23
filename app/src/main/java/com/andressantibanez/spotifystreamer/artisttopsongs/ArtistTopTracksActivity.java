@@ -10,6 +10,7 @@ import android.view.MenuItem;
 import android.widget.FrameLayout;
 
 import com.andressantibanez.spotifystreamer.R;
+import com.andressantibanez.spotifystreamer.tracksplayback.PlaybackService;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
@@ -62,6 +63,9 @@ public class ArtistTopTracksActivity extends AppCompatActivity implements Artist
                     .replace(R.id.fragment_artist_top_tracks, ArtistTopTracksFragment.newInstance(mArtistId, mArtistName))
                     .commit();
         }
+
+        //Playback test
+        startService(new Intent(this, PlaybackService.class));
     }
 
     /**
