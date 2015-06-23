@@ -1,1 +1,1 @@
-# udacity-spotify-streamer-stage-1
+# udacity-spotify-streamer-stage-2
