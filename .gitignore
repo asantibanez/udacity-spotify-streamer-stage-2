@@ -1,3 +1,6 @@
+# iml files
+*.iml
+
 # IntelliJ files
 .idea/
 
@@ -21,6 +24,7 @@ bin/
 gen/
 
 # Gradle files
+gradlew.bat
 .gradle/
 build/
 /*/build/
