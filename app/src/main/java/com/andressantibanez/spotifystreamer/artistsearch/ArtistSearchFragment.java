@@ -74,9 +74,9 @@ public class ArtistSearchFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_artist_search, container, false);
         ButterKnife.inject(this, view);
 
-        restoreState(savedInstanceState);
-
         setupControlsListeners();
+
+        restoreState(savedInstanceState);
 
         return view;
     }

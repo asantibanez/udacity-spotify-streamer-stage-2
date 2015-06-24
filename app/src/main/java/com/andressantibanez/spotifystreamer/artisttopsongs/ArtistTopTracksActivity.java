@@ -12,11 +12,15 @@ import android.widget.FrameLayout;
 import com.andressantibanez.spotifystreamer.R;
 import com.andressantibanez.spotifystreamer.tracksplayback.PlaybackService;
 
+import java.util.List;
+
 import butterknife.ButterKnife;
 import butterknife.InjectView;
+import kaaes.spotify.webapi.android.models.Track;
 
 
-public class ArtistTopTracksActivity extends AppCompatActivity implements ArtistTopTracksFragment.InteractionListener {
+public class ArtistTopTracksActivity extends AppCompatActivity
+        implements ArtistTopTracksFragment.InteractionListener {
 
     public static final String TAG = ArtistTopTracksActivity.class.getSimpleName();
 
@@ -63,9 +67,6 @@ public class ArtistTopTracksActivity extends AppCompatActivity implements Artist
                     .replace(R.id.fragment_artist_top_tracks, ArtistTopTracksFragment.newInstance(mArtistId, mArtistName))
                     .commit();
         }
-
-        //Playback test
-        startService(new Intent(this, PlaybackService.class));
     }
 
     /**
@@ -87,7 +88,8 @@ public class ArtistTopTracksActivity extends AppCompatActivity implements Artist
      * ArtistTopTracksFragment.InteractionListener implementation
      */
     @Override
-    public void onTrackSelected(String trackId) {
-
+    public void onTrackSelected(List<Track> tracksList, String trackId) {
+        PlaybackService.setTracks(this, tracksList);
+        PlaybackService.playTrack(this, trackId);
     }
 }

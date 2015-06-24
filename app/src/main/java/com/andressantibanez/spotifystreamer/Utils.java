@@ -1,7 +1,5 @@
 package com.andressantibanez.spotifystreamer;
 
-import android.util.Log;
-
 import java.util.List;
 
 import kaaes.spotify.webapi.android.models.Image;

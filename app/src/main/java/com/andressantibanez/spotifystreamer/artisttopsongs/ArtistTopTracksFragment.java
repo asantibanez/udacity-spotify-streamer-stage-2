@@ -7,11 +7,13 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.andressantibanez.spotifystreamer.R;
+import com.andressantibanez.spotifystreamer.tracksplayback.PlaybackService;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -90,7 +92,17 @@ public class ArtistTopTracksFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_artist_top_tracks, container, false);
         ButterKnife.inject(this, view);
 
+        mTopTracksListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
+                Track track = mAdapter.getItem(position);
+                mListener.onTrackSelected(mTopTracksList, track.id);
+            }
+        });
+
         restoreState(savedInstanceState);
+
+
 
         return view;
     }
@@ -227,7 +239,7 @@ public class ArtistTopTracksFragment extends Fragment {
      * InteractionListener interface
      */
     public interface InteractionListener {
-        public void onTrackSelected(String trackId);
+        public void onTrackSelected(List<Track> tracksList, String trackId);
     }
 
 }
