@@ -94,7 +94,7 @@ public class TopTracksAdapter extends BaseAdapter{
     }
 
     static class ViewHolder {
-        @InjectView(R.id.thumbnail) ImageView thumbnail;
+        @InjectView(R.id.album_thumbnail) ImageView thumbnail;
         @InjectView(R.id.track_name) TextView trackName;
         @InjectView(R.id.album_name) TextView albumName;
 

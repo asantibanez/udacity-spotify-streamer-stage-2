@@ -8,6 +8,7 @@ import android.media.MediaPlayer;
 import android.os.IBinder;
 import android.util.Log;
 
+import com.andressantibanez.spotifystreamer.tracksplayback.events.TrackIsPlayingEvent;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -16,6 +17,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
+import de.greenrobot.event.EventBus;
 import kaaes.spotify.webapi.android.models.Track;
 
 public class PlaybackService extends Service implements MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener {
@@ -39,6 +41,7 @@ public class PlaybackService extends Service implements MediaPlayer.OnPreparedLi
     private static final String TRACK_ID = "track_id";
 
     //Variables
+    Track mCurrentTrack;
     MediaPlayer mMediaPlayer;
     List<Track> mTracksList;
 
@@ -92,10 +95,10 @@ public class PlaybackService extends Service implements MediaPlayer.OnPreparedLi
         return START_NOT_STICKY;
     }
 
-    private String getTrackPreviewUrl(String trackId) {
+    private Track getTrackById(String trackId) {
         for(Track track : mTracksList) {
             if(track.id.equals(trackId))
-                return track.preview_url;
+                return track;
         }
 
         //Should not happen
@@ -121,7 +124,8 @@ public class PlaybackService extends Service implements MediaPlayer.OnPreparedLi
             e.printStackTrace();
         }
 
-        String trackUrl = getTrackPreviewUrl(trackId);
+        mCurrentTrack = getTrackById(trackId);
+        String trackUrl = mCurrentTrack.preview_url;
 
         MediaPlayer mediaPlayer = new MediaPlayer();
         mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
@@ -139,6 +143,10 @@ public class PlaybackService extends Service implements MediaPlayer.OnPreparedLi
         }
     }
 
+    private void showTrackPlayingNotification() {
+        EventBus.getDefault().post(new TrackIsPlayingEvent(mCurrentTrack));
+    }
+
 
     /**
      * MediaPlayer implementation
@@ -146,9 +154,10 @@ public class PlaybackService extends Service implements MediaPlayer.OnPreparedLi
     @Override
     public void onPrepared(MediaPlayer mediaPlayer) {
         Log.d(TAG, "Starting playback");
-
         mMediaPlayer = mediaPlayer;
         mMediaPlayer.start();
+
+        showTrackPlayingNotification();
     }
 
     @Override

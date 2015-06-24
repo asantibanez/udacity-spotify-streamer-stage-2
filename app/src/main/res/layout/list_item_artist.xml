@@ -7,7 +7,7 @@
     android:padding="@dimen/list_item_padding">
 
     <ImageView
-        android:id="@+id/thumbnail"
+        android:id="@+id/album_thumbnail"
         android:layout_width="@dimen/thumbnail_size"
         android:layout_height="@dimen/thumbnail_size"
         android:background="@color/thumbnail_background"
@@ -16,12 +16,12 @@
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_toEndOf="@id/thumbnail"
-        android:layout_toRightOf="@id/thumbnail"
+        android:layout_toEndOf="@id/album_thumbnail"
+        android:layout_toRightOf="@id/album_thumbnail"
         android:layout_centerVertical="true">
 
         <TextView
-            android:id="@+id/name"
+            android:id="@+id/artist_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"

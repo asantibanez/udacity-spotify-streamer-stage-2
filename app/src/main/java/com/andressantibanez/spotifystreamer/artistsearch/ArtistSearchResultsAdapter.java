@@ -97,8 +97,8 @@ public class ArtistSearchResultsAdapter extends BaseAdapter {
     }
 
     static class ViewHolder {
-        @InjectView(R.id.name) TextView name;
-        @InjectView(R.id.thumbnail) ImageView thumbnail;
+        @InjectView(R.id.artist_name) TextView name;
+        @InjectView(R.id.album_thumbnail) ImageView thumbnail;
 
         public ViewHolder(View view) {
             ButterKnife.inject(this, view);

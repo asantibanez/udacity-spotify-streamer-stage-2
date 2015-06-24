@@ -41,6 +41,9 @@ dependencies {
     //Spotify Wrapper
     compile(name:'spotify-web-api-android-0.1.0', ext:'aar')
 
+    //Event Bus
+    compile 'de.greenrobot:eventbus:2.4.0'
+
     //Square Libraries
     //Picasso
     compile 'com.squareup.picasso:picasso:2.5.2'
