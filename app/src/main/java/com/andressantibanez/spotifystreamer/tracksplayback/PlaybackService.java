@@ -5,9 +5,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.os.AsyncTask;
 import android.os.IBinder;
 import android.util.Log;
 
+import com.andressantibanez.spotifystreamer.tracksplayback.events.TrackProgressEvent;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -15,6 +17,7 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.List;
 
+import de.greenrobot.event.EventBus;
 import kaaes.spotify.webapi.android.models.Track;
 
 public class PlaybackService extends Service implements MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener {
@@ -41,6 +44,7 @@ public class PlaybackService extends Service implements MediaPlayer.OnPreparedLi
     Track mCurrentTrack;
     int mCurrentTrackIndex;
     MediaPlayer mMediaPlayer;
+    BroadcastTrackProgressTask mBroadcastTrackProgressTask;
     List<Track> mTracksList;
 
     /**
@@ -157,10 +161,13 @@ public class PlaybackService extends Service implements MediaPlayer.OnPreparedLi
         if(mMediaPlayer.isPlaying())
             mMediaPlayer.stop();
 
-
         mMediaPlayer.setOnPreparedListener(null);
         mMediaPlayer.reset();
+        mMediaPlayer.release();
         mMediaPlayer = null;
+
+        if(mBroadcastTrackProgressTask != null)
+            mBroadcastTrackProgressTask.cancel(true);
     }
 
     private void playTrack(String trackId) {
@@ -172,29 +179,57 @@ public class PlaybackService extends Service implements MediaPlayer.OnPreparedLi
         mCurrentTrackIndex = mTracksList.indexOf(mCurrentTrack);
         String trackUrl = mCurrentTrack.preview_url;
 
-        Log.d(TAG, "Track Url: " + trackUrl);
-
         //Start Media Player
-        MediaPlayer mediaPlayer = new MediaPlayer();
-        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-        mediaPlayer.setOnPreparedListener(this);
-        mediaPlayer.setOnErrorListener(this);
+        mMediaPlayer = new MediaPlayer();
+        mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        mMediaPlayer.setOnPreparedListener(this);
+        mMediaPlayer.setOnErrorListener(this);
         try {
-            mediaPlayer.setDataSource(trackUrl);
-            mediaPlayer.prepareAsync();
+            mMediaPlayer.setDataSource(trackUrl);
+            mMediaPlayer.prepareAsync();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
+    /**
+     * BroadcastTrackProgressTask: reports song that is being played and progress
+     */
+    class BroadcastTrackProgressTask extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+
+            while(!isCancelled()) {
+
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                if(mMediaPlayer.isPlaying()) {
+                    EventBus.getDefault().post(TrackProgressEvent.newInstance(mCurrentTrack, mMediaPlayer.getCurrentPosition()));
+                } else {
+                    EventBus.getDefault().post(TrackProgressEvent.newInstance(mCurrentTrack, 0));
+                    return null;
+                }
+
+            }
+
+            return null;
+        }
+    }
 
     /**
      * MediaPlayer implementation
      */
     @Override
     public void onPrepared(MediaPlayer mediaPlayer) {
-        mMediaPlayer = mediaPlayer;
         mMediaPlayer.start();
+
+        mBroadcastTrackProgressTask = new BroadcastTrackProgressTask();
+        mBroadcastTrackProgressTask.execute();
     }
 
     @Override

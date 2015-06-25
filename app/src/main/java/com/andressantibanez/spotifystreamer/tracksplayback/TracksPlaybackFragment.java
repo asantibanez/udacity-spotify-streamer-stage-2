@@ -2,17 +2,19 @@ package com.andressantibanez.spotifystreamer.tracksplayback;
 
 import android.app.Dialog;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.andressantibanez.spotifystreamer.R;
-import com.andressantibanez.spotifystreamer.tracksplayback.events.TrackIsPlayingEvent;
+import com.andressantibanez.spotifystreamer.Utils;
+import com.andressantibanez.spotifystreamer.tracksplayback.events.TrackProgressEvent;
+import com.squareup.picasso.Picasso;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
@@ -24,6 +26,7 @@ public class TracksPlaybackFragment extends DialogFragment {
     public static final String TAG = TracksPlaybackFragment.class.getSimpleName();
 
     //Variables
+    Track mCurrentTrack;
 
     //Controls
     @InjectView(R.id.artist_name) TextView mArtistName;
@@ -31,6 +34,7 @@ public class TracksPlaybackFragment extends DialogFragment {
     @InjectView(R.id.track_name) TextView mTrackName;
     @InjectView(R.id.play_previous_track) Button mPlayPreviousTrack;
     @InjectView(R.id.play_next_track) Button mPlayNextTrack;
+    @InjectView(R.id.album_thumbnail) ImageView mThumbnail;
 
     /**
      * Factory method
@@ -77,6 +81,9 @@ public class TracksPlaybackFragment extends DialogFragment {
             }
         });
 
+        //Register for Bus updates
+        EventBus.getDefault().register(this);
+
         return view;
     }
 
@@ -91,6 +98,41 @@ public class TracksPlaybackFragment extends DialogFragment {
     public void onDestroy() {
         super.onDestroy();
         ButterKnife.reset(this);
+
+        //Unregiter for Bus
+        EventBus.getDefault().unregister(this);
+    }
+
+    /**
+     * Events handling
+     */
+    public void onEventMainThread(TrackProgressEvent event) {
+        Track track = event.getTrack();
+        if(mCurrentTrack == null || !mCurrentTrack.id.equals(track.id)) {
+            mCurrentTrack = track;
+            displayTrackInfo();
+        }
+    }
+
+    private void displayTrackInfo() {
+        mArtistName.setText(mCurrentTrack.artists.get(0).name);
+        mAlbumName.setText(mCurrentTrack.album.name);
+        mTrackName.setText(mCurrentTrack.name);
+
+        String thumbnailUrl;
+
+        //Get thumbnail for album. 600 -> 300 -> 0
+        thumbnailUrl = Utils.getThumbnailUrl(mCurrentTrack.album.images, 600);
+        if(thumbnailUrl == null)
+            thumbnailUrl = Utils.getThumbnailUrl(mCurrentTrack.album.images, 300);
+        if(thumbnailUrl == null)
+            thumbnailUrl = Utils.getThumbnailUrl(mCurrentTrack.album.images, 0);
+
+
+        mThumbnail.setImageBitmap(null);
+        if(thumbnailUrl != null)
+            Picasso.with(getActivity()).load(thumbnailUrl).into(mThumbnail);
+
     }
 
 }
