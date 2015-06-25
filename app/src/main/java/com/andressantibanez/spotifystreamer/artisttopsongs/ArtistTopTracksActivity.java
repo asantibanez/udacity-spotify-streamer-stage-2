@@ -12,6 +12,7 @@ import android.widget.FrameLayout;
 
 import com.andressantibanez.spotifystreamer.R;
 import com.andressantibanez.spotifystreamer.tracksplayback.PlaybackService;
+import com.andressantibanez.spotifystreamer.tracksplayback.TracksPlaybackActivity;
 import com.andressantibanez.spotifystreamer.tracksplayback.TracksPlaybackFragment;
 
 
@@ -95,13 +96,6 @@ public class ArtistTopTracksActivity extends AppCompatActivity
         PlaybackService.setTracks(this, tracksList);
         PlaybackService.playTrack(this, trackId);
 
-        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        // For a little polish, specify a transition animation
-        transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
-        // To make it fullscreen, use the 'content' root view as the container
-        // for the fragment, which is always the root view for the activity
-        transaction.add(android.R.id.content, TracksPlaybackFragment.newInstance())
-                .addToBackStack(null).commit();
-
+        TracksPlaybackActivity.launch(this);
     }
 }

@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.widget.Button;
 import android.widget.TextView;
 
 import com.andressantibanez.spotifystreamer.R;
@@ -28,6 +29,8 @@ public class TracksPlaybackFragment extends DialogFragment {
     @InjectView(R.id.artist_name) TextView mArtistName;
     @InjectView(R.id.album_name) TextView mAlbumName;
     @InjectView(R.id.track_name) TextView mTrackName;
+    @InjectView(R.id.play_previous_track) Button mPlayPreviousTrack;
+    @InjectView(R.id.play_next_track) Button mPlayNextTrack;
 
     /**
      * Factory method
@@ -39,10 +42,14 @@ public class TracksPlaybackFragment extends DialogFragment {
         return fragment;
     }
 
-    public TracksPlaybackFragment() {
-        // Required empty public constructor
-    }
+    /**
+     * Required constructor
+     */
+    public TracksPlaybackFragment() {}
 
+    /**
+     * Lifecycle methods
+     */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,17 +63,27 @@ public class TracksPlaybackFragment extends DialogFragment {
         View view = inflater.inflate(R.layout.fragment_tracks_playback, container, false);
         ButterKnife.inject(this, view);
 
-        EventBus.getDefault().register(this);
+        //Setup listeners
+        mPlayPreviousTrack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                PlaybackService.playPreviousTrack(getActivity());
+            }
+        });
+        mPlayNextTrack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                PlaybackService.playNextTrack(getActivity());
+            }
+        });
 
         return view;
     }
 
-    @NonNull
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         Dialog dialog = super.onCreateDialog(savedInstanceState);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-
         return dialog;
     }
 
@@ -74,15 +91,6 @@ public class TracksPlaybackFragment extends DialogFragment {
     public void onDestroy() {
         super.onDestroy();
         ButterKnife.reset(this);
-
-        EventBus.getDefault().unregister(this);
     }
 
-    public void onEvent(TrackIsPlayingEvent event) {
-        Track track = event.getTrack();
-
-        mArtistName.setText(track.artists.get(0).name);
-        mAlbumName.setText(track.album.name);
-        mTrackName.setText(track.name);
-    }
 }
