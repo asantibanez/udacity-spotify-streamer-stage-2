@@ -9,7 +9,8 @@ import android.os.AsyncTask;
 import android.os.IBinder;
 import android.util.Log;
 
-import com.andressantibanez.spotifystreamer.tracksplayback.events.TrackProgressEvent;
+import com.andressantibanez.spotifystreamer.tracksplayback.events.TrackPlayingProgressEvent;
+import com.andressantibanez.spotifystreamer.tracksplayback.events.TrackToBePlayedEvent;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -179,6 +180,9 @@ public class PlaybackService extends Service implements MediaPlayer.OnPreparedLi
         mCurrentTrackIndex = mTracksList.indexOf(mCurrentTrack);
         String trackUrl = mCurrentTrack.preview_url;
 
+        //Notify track to be played
+        broadcastTrackToBePlayed();
+
         //Start Media Player
         mMediaPlayer = new MediaPlayer();
         mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
@@ -192,6 +196,19 @@ public class PlaybackService extends Service implements MediaPlayer.OnPreparedLi
         }
     }
 
+
+    /**
+     * Player broadcast
+     */
+    public void broadcastTrackToBePlayed() {
+        EventBus.getDefault().post(new TrackToBePlayedEvent(mCurrentTrack));
+    }
+
+    public void broadcastTrackPlayingProgress() {
+        EventBus.getDefault().post(TrackPlayingProgressEvent.newInstance(mCurrentTrack, mMediaPlayer.getCurrentPosition()));
+    }
+
+
     /**
      * BroadcastTrackProgressTask: reports song that is being played and progress
      */
@@ -201,31 +218,30 @@ public class PlaybackService extends Service implements MediaPlayer.OnPreparedLi
         protected Void doInBackground(Void... voids) {
 
             while(!isCancelled()) {
-
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
 
-                if(mMediaPlayer.isPlaying()) {
-                    EventBus.getDefault().post(TrackProgressEvent.newInstance(mCurrentTrack, mMediaPlayer.getCurrentPosition()));
-                } else {
-                    EventBus.getDefault().post(TrackProgressEvent.newInstance(mCurrentTrack, 0));
+                if(!mMediaPlayer.isPlaying())
                     return null;
-                }
 
+                broadcastTrackPlayingProgress();
             }
 
             return null;
         }
     }
 
+
     /**
      * MediaPlayer implementation
      */
     @Override
     public void onPrepared(MediaPlayer mediaPlayer) {
+        broadcastTrackToBePlayed();
+
         mMediaPlayer.start();
 
         mBroadcastTrackProgressTask = new BroadcastTrackProgressTask();

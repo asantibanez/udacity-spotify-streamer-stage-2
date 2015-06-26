@@ -7,8 +7,6 @@ import android.support.v7.app.AppCompatActivity;
 
 import com.andressantibanez.spotifystreamer.R;
 
-import butterknife.InjectView;
-
 public class TracksPlaybackActivity extends AppCompatActivity {
 
     public static void launch(Context context) {

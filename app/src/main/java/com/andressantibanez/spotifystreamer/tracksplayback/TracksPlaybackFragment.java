@@ -13,7 +13,8 @@ import android.widget.TextView;
 
 import com.andressantibanez.spotifystreamer.R;
 import com.andressantibanez.spotifystreamer.Utils;
-import com.andressantibanez.spotifystreamer.tracksplayback.events.TrackProgressEvent;
+import com.andressantibanez.spotifystreamer.tracksplayback.events.TrackPlayingProgressEvent;
+import com.andressantibanez.spotifystreamer.tracksplayback.events.TrackToBePlayedEvent;
 import com.squareup.picasso.Picasso;
 
 import butterknife.ButterKnife;
@@ -106,12 +107,19 @@ public class TracksPlaybackFragment extends DialogFragment {
     /**
      * Events handling
      */
-    public void onEventMainThread(TrackProgressEvent event) {
-        Track track = event.getTrack();
+    public void updateCurrentTrack(Track track) {
         if(mCurrentTrack == null || !mCurrentTrack.id.equals(track.id)) {
             mCurrentTrack = track;
             displayTrackInfo();
         }
+    }
+
+    public void onEventMainThread(TrackToBePlayedEvent event) {
+        updateCurrentTrack(event.getTrack());
+    }
+
+    public void onEventMainThread(TrackPlayingProgressEvent event) {
+        updateCurrentTrack(event.getTrack());
     }
 
     private void displayTrackInfo() {

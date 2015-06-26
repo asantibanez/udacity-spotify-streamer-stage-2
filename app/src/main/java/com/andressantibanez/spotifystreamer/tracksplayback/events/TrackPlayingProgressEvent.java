@@ -2,12 +2,12 @@ package com.andressantibanez.spotifystreamer.tracksplayback.events;
 
 import kaaes.spotify.webapi.android.models.Track;
 
-public class TrackProgressEvent {
+public class TrackPlayingProgressEvent {
 
     Track track;
     int position;
 
-    public TrackProgressEvent(Track track, int position) {
+    public TrackPlayingProgressEvent(Track track, int position) {
         this.track = track;
         this.position = position;
     }
@@ -19,7 +19,7 @@ public class TrackProgressEvent {
         return position;
     }
 
-    public static TrackProgressEvent newInstance(Track track, int position) {
-        return new TrackProgressEvent(track, position);
+    public static TrackPlayingProgressEvent newInstance(Track track, int position) {
+        return new TrackPlayingProgressEvent(track, position);
     }
 }
