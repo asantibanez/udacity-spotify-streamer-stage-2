@@ -8,6 +8,8 @@ import android.widget.FrameLayout;
 import com.andressantibanez.spotifystreamer.R;
 import com.andressantibanez.spotifystreamer.artisttopsongs.ArtistTopTracksActivity;
 import com.andressantibanez.spotifystreamer.artisttopsongs.ArtistTopTracksFragment;
+import com.andressantibanez.spotifystreamer.tracksplayback.PlaybackService;
+import com.andressantibanez.spotifystreamer.tracksplayback.TracksPlaybackFragment;
 
 import java.util.List;
 
@@ -66,6 +68,9 @@ public class ArtistSearchActivity extends AppCompatActivity
      */
     @Override
     public void onTrackSelected(List<Track> tracksList, String trackId) {
+        PlaybackService.setTracks(this, tracksList);
 
+        TracksPlaybackFragment fragment = TracksPlaybackFragment.newInstance(trackId);
+        fragment.show(getSupportFragmentManager(), "dialog");
     }
 }

@@ -4,22 +4,27 @@ import kaaes.spotify.webapi.android.models.Track;
 
 public class TrackPlayingProgressEvent {
 
-    Track track;
-    int position;
+    Track mTrack;
+    int mProgress;
+    int mMaxProgress;
 
-    public TrackPlayingProgressEvent(Track track, int position) {
-        this.track = track;
-        this.position = position;
+    public TrackPlayingProgressEvent(Track track, int progress, int maxProgress) {
+        mTrack = track;
+        mProgress = progress;
+        mMaxProgress = maxProgress;
     }
 
     public Track getTrack() {
-        return track;
+        return mTrack;
     }
-    public int getPosition() {
-        return position;
+    public int getProgress() {
+        return mProgress;
+    }
+    public int getMaxProgress() {
+        return mMaxProgress;
     }
 
-    public static TrackPlayingProgressEvent newInstance(Track track, int position) {
-        return new TrackPlayingProgressEvent(track, position);
+    public static TrackPlayingProgressEvent newInstance(Track track, int progress, int maxProgress) {
+        return new TrackPlayingProgressEvent(track, progress, maxProgress);
     }
 }

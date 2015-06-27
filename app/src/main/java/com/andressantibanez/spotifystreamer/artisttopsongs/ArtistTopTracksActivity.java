@@ -94,8 +94,6 @@ public class ArtistTopTracksActivity extends AppCompatActivity
     @Override
     public void onTrackSelected(List<Track> tracksList, String trackId) {
         PlaybackService.setTracks(this, tracksList);
-        PlaybackService.playTrack(this, trackId);
-
-        TracksPlaybackActivity.launch(this);
+        TracksPlaybackActivity.launch(this, trackId);
     }
 }

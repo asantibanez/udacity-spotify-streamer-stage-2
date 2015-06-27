@@ -102,8 +102,6 @@ public class ArtistTopTracksFragment extends Fragment {
 
         restoreState(savedInstanceState);
 
-
-
         return view;
     }
 

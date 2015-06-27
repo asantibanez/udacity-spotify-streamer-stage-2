@@ -8,7 +8,10 @@ import android.media.MediaPlayer;
 import android.os.AsyncTask;
 import android.os.IBinder;
 import android.util.Log;
+import android.widget.Toast;
 
+import com.andressantibanez.spotifystreamer.R;
+import com.andressantibanez.spotifystreamer.tracksplayback.events.TrackPlaybackCompletedEvent;
 import com.andressantibanez.spotifystreamer.tracksplayback.events.TrackPlayingProgressEvent;
 import com.andressantibanez.spotifystreamer.tracksplayback.events.TrackToBePlayedEvent;
 import com.google.gson.Gson;
@@ -21,7 +24,10 @@ import java.util.List;
 import de.greenrobot.event.EventBus;
 import kaaes.spotify.webapi.android.models.Track;
 
-public class PlaybackService extends Service implements MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener {
+public class PlaybackService extends Service implements
+        MediaPlayer.OnPreparedListener,
+        MediaPlayer.OnErrorListener,
+        MediaPlayer.OnCompletionListener {
 
     public static final String TAG = PlaybackService.class.getSimpleName();
 
@@ -31,15 +37,17 @@ public class PlaybackService extends Service implements MediaPlayer.OnPreparedLi
      * http://developer.android.com/guide/topics/media/mediaplayer.html#mpandservices
      */
     //Available Actions
-    public static final String ACTION_PLAY_TRACK = "play_song";
-    public static final String ACTION_STOP = "stop_song";
-    public static final String ACTION_PLAY_PREVIOUS_TRACK = "previous_song";
-    public static final String ACTION_PLAY_NEXT_TRACK = "next_track";
-    public static final String ACTION_SET_TRACKS = "add_tracks";
+    public static final String ACTION_PLAY_TRACK = "action_play_song";
+    public static final String ACTION_STOP = "action_stop_song";
+    public static final String ACTION_PLAY_PREVIOUS_TRACK = "action_previous_song";
+    public static final String ACTION_PLAY_NEXT_TRACK = "action_next_track";
+    public static final String ACTION_SET_TRACKS = "action_add_tracks";
+    public static final String ACTION_SET_TRACK_PROGRESS_TO = "action_set_track_progress_to";
 
     //Constants
     private static final String TRACKS_LIST = "tracks_list";
     private static final String TRACK_ID = "track_id";
+    private static final String TRACK_PROGRESS = "track_progress";
 
     //Variables
     Track mCurrentTrack;
@@ -82,6 +90,13 @@ public class PlaybackService extends Service implements MediaPlayer.OnPreparedLi
         context.startService(serviceIntent);
     }
 
+    public static void setTrackProgressTo(Context context, int progress) {
+        Intent serviceIntent = new Intent(context, PlaybackService.class);
+        serviceIntent.setAction(ACTION_SET_TRACK_PROGRESS_TO);
+        serviceIntent.putExtra(TRACK_PROGRESS, progress);
+        context.startService(serviceIntent);
+    }
+
     /**
      * Binder interface
      */
@@ -116,6 +131,12 @@ public class PlaybackService extends Service implements MediaPlayer.OnPreparedLi
         //Next track
         if(intent.getAction().equals(ACTION_PLAY_NEXT_TRACK)) {
             playNextTrack();
+        }
+
+        //Set track progress
+        if(intent.getAction().equals(ACTION_SET_TRACK_PROGRESS_TO)) {
+            int progress = intent.getIntExtra(TRACK_PROGRESS, 0);
+            setTrackProgressTo(progress);
         }
 
         return START_NOT_STICKY;
@@ -188,6 +209,7 @@ public class PlaybackService extends Service implements MediaPlayer.OnPreparedLi
         mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         mMediaPlayer.setOnPreparedListener(this);
         mMediaPlayer.setOnErrorListener(this);
+        mMediaPlayer.setOnCompletionListener(this);
         try {
             mMediaPlayer.setDataSource(trackUrl);
             mMediaPlayer.prepareAsync();
@@ -196,16 +218,34 @@ public class PlaybackService extends Service implements MediaPlayer.OnPreparedLi
         }
     }
 
+    private void setTrackProgressTo(int progress) {
+        if(mMediaPlayer == null)
+            broadcastTrackPlaybackCompleted();
 
-    /**
-     * Player broadcast
-     */
-    public void broadcastTrackToBePlayed() {
-        EventBus.getDefault().post(new TrackToBePlayedEvent(mCurrentTrack));
+        if(mMediaPlayer.isPlaying())
+           mMediaPlayer.seekTo(progress);
     }
 
-    public void broadcastTrackPlayingProgress() {
-        EventBus.getDefault().post(TrackPlayingProgressEvent.newInstance(mCurrentTrack, mMediaPlayer.getCurrentPosition()));
+    /**
+     * Player broadcasts
+     */
+    private void broadcastTrackToBePlayed() {
+        TrackToBePlayedEvent event = new TrackToBePlayedEvent(mCurrentTrack);
+        EventBus.getDefault().post(event);
+    }
+
+    private void broadcastTrackPlayingProgress() {
+        TrackPlayingProgressEvent event = TrackPlayingProgressEvent.newInstance(
+                mCurrentTrack,
+                mMediaPlayer.getCurrentPosition(),
+                mMediaPlayer.getDuration()
+        );
+        EventBus.getDefault().post(event);
+    }
+
+    private void broadcastTrackPlaybackCompleted() {
+        TrackPlaybackCompletedEvent event = new TrackPlaybackCompletedEvent(mCurrentTrack);
+        EventBus.getDefault().post(event);
     }
 
 
@@ -250,7 +290,13 @@ public class PlaybackService extends Service implements MediaPlayer.OnPreparedLi
 
     @Override
     public boolean onError(MediaPlayer mediaPlayer, int i, int i1) {
-        Log.e(TAG, "Error thrown!");
+        Log.e(TAG, "Error during Playback!");
+        Toast.makeText(this, R.string.playback_error, Toast.LENGTH_LONG).show();
         return false;
+    }
+
+    @Override
+    public void onCompletion(MediaPlayer mediaPlayer) {
+        broadcastTrackPlaybackCompleted();
     }
 }
