@@ -8,6 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -18,6 +19,8 @@ import com.andressantibanez.spotifystreamer.tracksplayback.events.TrackPlaybackC
 import com.andressantibanez.spotifystreamer.tracksplayback.events.TrackPlayingProgressEvent;
 import com.andressantibanez.spotifystreamer.tracksplayback.events.TrackToBePlayedEvent;
 import com.squareup.picasso.Picasso;
+
+import java.util.concurrent.TimeUnit;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
@@ -42,9 +45,12 @@ public class TracksPlaybackFragment extends DialogFragment {
     @InjectView(R.id.album_name) TextView mAlbumName;
     @InjectView(R.id.track_name) TextView mTrackName;
     @InjectView(R.id.track_progress) SeekBar mTrackProgress;
-    @InjectView(R.id.play_previous_track) Button mPlayPreviousTrack;
-    @InjectView(R.id.play_next_track) Button mPlayNextTrack;
+    @InjectView(R.id.play_previous_track) ImageButton mPlayPreviousTrack;
+    @InjectView(R.id.play_track) ImageButton mPlayTrack;
+    @InjectView(R.id.play_next_track) ImageButton mPlayNextTrack;
     @InjectView(R.id.album_thumbnail) ImageView mThumbnail;
+    @InjectView(R.id.track_position) TextView mTrackPosition;
+    @InjectView(R.id.track_length) TextView mTrackLength;
 
     /**
      * Factory method
@@ -157,6 +163,7 @@ public class TracksPlaybackFragment extends DialogFragment {
     public void onEventMainThread(TrackPlaybackCompletedEvent event) {
         updateCurrentTrack(event.getTrack());
         mTrackProgress.setProgress(0);
+        mTrackPosition.setText(Utils.millisecondsToMMSS(0));
     }
 
     private void displayTrackInfo() {
@@ -182,8 +189,11 @@ public class TracksPlaybackFragment extends DialogFragment {
     }
 
     private void setTrackProgress(int progress) {
-        if(mTrackProgressAutoUpdate)
-            mTrackProgress.setProgress(progress);
+        if(!mTrackProgressAutoUpdate)
+            return;
+
+        mTrackProgress.setProgress(progress);
+        mTrackPosition.setText(Utils.millisecondsToMMSS(progress));
     }
 
     private void setTrackMaxProgress(int maxProgress) {
@@ -192,6 +202,7 @@ public class TracksPlaybackFragment extends DialogFragment {
 
         mMaxProgress = maxProgress;
         mTrackProgress.setMax(maxProgress);
+        mTrackLength.setText(Utils.millisecondsToMMSS(maxProgress));
 
     }
 

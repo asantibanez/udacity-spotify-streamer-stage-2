@@ -1,16 +1,24 @@
 package com.andressantibanez.spotifystreamer.tracksplayback;
 
+import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.IBinder;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
+import android.widget.RemoteViews;
 import android.widget.Toast;
 
 import com.andressantibanez.spotifystreamer.R;
+import com.andressantibanez.spotifystreamer.artistsearch.ArtistSearchActivity;
 import com.andressantibanez.spotifystreamer.tracksplayback.events.TrackPlaybackCompletedEvent;
 import com.andressantibanez.spotifystreamer.tracksplayback.events.TrackPlayingProgressEvent;
 import com.andressantibanez.spotifystreamer.tracksplayback.events.TrackToBePlayedEvent;
@@ -38,7 +46,6 @@ public class PlaybackService extends Service implements
      */
     //Available Actions
     public static final String ACTION_PLAY_TRACK = "action_play_song";
-    public static final String ACTION_STOP = "action_stop_song";
     public static final String ACTION_PLAY_PREVIOUS_TRACK = "action_previous_song";
     public static final String ACTION_PLAY_NEXT_TRACK = "action_next_track";
     public static final String ACTION_SET_TRACKS = "action_add_tracks";
@@ -232,6 +239,8 @@ public class PlaybackService extends Service implements
     private void broadcastTrackToBePlayed() {
         TrackToBePlayedEvent event = new TrackToBePlayedEvent(mCurrentTrack);
         EventBus.getDefault().post(event);
+
+        showNotification(null);
     }
 
     private void broadcastTrackPlayingProgress() {
@@ -246,6 +255,54 @@ public class PlaybackService extends Service implements
     private void broadcastTrackPlaybackCompleted() {
         TrackPlaybackCompletedEvent event = new TrackPlaybackCompletedEvent(mCurrentTrack);
         EventBus.getDefault().post(event);
+    }
+
+
+    /**
+     * Notifications
+     */
+    private void showNotification(Bitmap thumbnailBitmap) {
+        //New Remote View
+        RemoteViews remoteView = new RemoteViews(getPackageName(), R.layout.notification_playback);
+        if(Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT_WATCH) {
+            remoteView.setTextColor(R.id.track_name, Color.BLACK);
+            remoteView.setTextColor(R.id.artist_name, Color.BLACK);
+        }
+        remoteView.setTextViewText(R.id.track_name, mCurrentTrack.name);
+        remoteView.setTextViewText(R.id.artist_name, mCurrentTrack.artists.get(0).name);
+
+        //Prepare notification
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
+                .setSmallIcon(android.R.drawable.ic_dialog_map)
+                .setContent(remoteView);
+
+        //Display notification
+        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        notificationManager.notify(1000, notificationBuilder.build());
+
+        /*
+        PendingIntent pendingIntent =
+
+// The stack builder object will contain an artificial back stack for the
+// started Activity.
+// This ensures that navigating backward from the Activity leads out of
+// your application to the Home screen.
+        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+// Adds the back stack for the Intent (but not the Intent itself)
+        stackBuilder.addParentStack(ResultActivity.class);
+// Adds the Intent that starts the Activity to the top of the stack
+        stackBuilder.addNextIntent(resultIntent);
+        PendingIntent resultPendingIntent =
+                stackBuilder.getPendingIntent(
+                        0,
+                        PendingIntent.FLAG_UPDATE_CURRENT
+                );
+        mBuilder.setContentIntent(resultPendingIntent);
+        NotificationManager mNotificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+// mId allows you to update the notification later on.
+        mNotificationManager.notify(mId, mBuilder.build());
+        */
     }
 
 

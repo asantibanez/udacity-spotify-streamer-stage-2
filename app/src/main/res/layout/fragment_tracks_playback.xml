@@ -40,10 +40,32 @@
         android:textSize="20sp"
         tools:text="Smells Like Teen Spirit"/>
 
-    <SeekBar
-        android:id="@+id/track_progress"
+
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content">
+
+        <SeekBar
+            android:id="@+id/track_progress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/track_position"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/track_progress"
+            tools:text="0:00"/>
+
+        <TextView
+            android:id="@+id/track_length"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/track_progress"
+            android:layout_alignParentRight="true"
+            tools:text="0:00"/>
+
+    </RelativeLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -51,22 +73,28 @@
         android:orientation="horizontal"
         android:gravity="center_horizontal">
 
-        <Button
+        <ImageButton
             android:id="@+id/play_previous_track"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Previous"/>
+            android:src="@android:drawable/ic_media_previous"
+            android:contentDescription="@string/previous"/>
 
-        <Button
+        <ImageButton
+            android:id="@+id/play_track"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Play"/>
+            android:src="@android:drawable/ic_media_play"
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="8dp"
+            android:contentDescription="@string/play"/>
 
-        <Button
+        <ImageButton
             android:id="@+id/play_next_track"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Next"/>
+            android:src="@android:drawable/ic_media_next"
+            android:contentDescription="@string/next"/>
 
     </LinearLayout>
 

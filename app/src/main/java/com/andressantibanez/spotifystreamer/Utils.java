@@ -1,6 +1,7 @@
 package com.andressantibanez.spotifystreamer;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import kaaes.spotify.webapi.android.models.Image;
 
@@ -27,4 +28,10 @@ public class Utils {
         return thumbnailUrl;
     }
 
+    public static String millisecondsToMMSS(long milliseconds) {
+        return String.format("%d:%d",
+                TimeUnit.MILLISECONDS.toMinutes(milliseconds),
+                TimeUnit.MILLISECONDS.toSeconds(milliseconds) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(milliseconds))
+        );
+    }
 }
