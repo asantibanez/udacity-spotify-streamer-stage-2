@@ -8,5 +8,8 @@
     <color name="color_accent">#FB8C00</color>
 
     <color name="window_background">#FFF5F5F5</color>
+    <color name="notification_background">#444444</color>
+
+    <color name="white">#eeeeee</color>
 
 </resources>

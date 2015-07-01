@@ -1,6 +1,8 @@
 package com.andressantibanez.spotifystreamer.tracksplayback;
 
+import android.app.Notification;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -14,16 +16,19 @@ import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
+import android.view.View;
 import android.widget.RemoteViews;
 import android.widget.Toast;
 
 import com.andressantibanez.spotifystreamer.R;
+import com.andressantibanez.spotifystreamer.Utils;
 import com.andressantibanez.spotifystreamer.artistsearch.ArtistSearchActivity;
 import com.andressantibanez.spotifystreamer.tracksplayback.events.TrackPlaybackCompletedEvent;
 import com.andressantibanez.spotifystreamer.tracksplayback.events.TrackPlayingProgressEvent;
 import com.andressantibanez.spotifystreamer.tracksplayback.events.TrackToBePlayedEvent;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.squareup.picasso.Picasso;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -45,11 +50,14 @@ public class PlaybackService extends Service implements
      * http://developer.android.com/guide/topics/media/mediaplayer.html#mpandservices
      */
     //Available Actions
-    public static final String ACTION_PLAY_TRACK = "action_play_song";
-    public static final String ACTION_PLAY_PREVIOUS_TRACK = "action_previous_song";
+    public static final String ACTION_PLAY_TRACK = "action_play_track";
+    public static final String ACTION_PAUSE_TRACK = "action_pause_track";
+    public static final String ACTION_RESUME_TRACK = "action_resume_track";
+    public static final String ACTION_PLAY_PREVIOUS_TRACK = "action_previous_track";
     public static final String ACTION_PLAY_NEXT_TRACK = "action_next_track";
     public static final String ACTION_SET_TRACKS = "action_add_tracks";
     public static final String ACTION_SET_TRACK_PROGRESS_TO = "action_set_track_progress_to";
+    public static final String ACTION_BROADCAST_CURRENT_TRACK = "action_broadcast_current_track";
 
     //Constants
     private static final String TRACKS_LIST = "tracks_list";
@@ -62,6 +70,7 @@ public class PlaybackService extends Service implements
     MediaPlayer mMediaPlayer;
     BroadcastTrackProgressTask mBroadcastTrackProgressTask;
     List<Track> mTracksList;
+    int mCurrentTrackThumbnailBitmap;
 
     /**
      * Constructor
@@ -85,6 +94,18 @@ public class PlaybackService extends Service implements
         context.startService(serviceIntent);
     }
 
+    public static void pauseTrack(Context context) {
+        Intent serviceIntent = new Intent(context, PlaybackService.class);
+        serviceIntent.setAction(ACTION_PAUSE_TRACK);
+        context.startService(serviceIntent);
+    }
+
+    public static void resumeTrack(Context context) {
+        Intent serviceIntent = new Intent(context, PlaybackService.class);
+        serviceIntent.setAction(ACTION_RESUME_TRACK);
+        context.startService(serviceIntent);
+    }
+
     public static void playNextTrack(Context context) {
         Intent serviceIntent = new Intent(context, PlaybackService.class);
         serviceIntent.setAction(ACTION_PLAY_NEXT_TRACK);
@@ -101,6 +122,12 @@ public class PlaybackService extends Service implements
         Intent serviceIntent = new Intent(context, PlaybackService.class);
         serviceIntent.setAction(ACTION_SET_TRACK_PROGRESS_TO);
         serviceIntent.putExtra(TRACK_PROGRESS, progress);
+        context.startService(serviceIntent);
+    }
+
+    public static void broadcastCurrentTrack(Context context) {
+        Intent serviceIntent = new Intent(context, PlaybackService.class);
+        serviceIntent.setAction(ACTION_BROADCAST_CURRENT_TRACK);
         context.startService(serviceIntent);
     }
 
@@ -135,6 +162,16 @@ public class PlaybackService extends Service implements
             playTrack(trackId);
         }
 
+        //Pause track
+        if(intent.getAction().equals(ACTION_PAUSE_TRACK)) {
+            pauseTrack();
+        }
+
+        //Resume track
+        if(intent.getAction().equals(ACTION_RESUME_TRACK)) {
+            resumeTrack();
+        }
+
         //Next track
         if(intent.getAction().equals(ACTION_PLAY_NEXT_TRACK)) {
             playNextTrack();
@@ -144,6 +181,12 @@ public class PlaybackService extends Service implements
         if(intent.getAction().equals(ACTION_SET_TRACK_PROGRESS_TO)) {
             int progress = intent.getIntExtra(TRACK_PROGRESS, 0);
             setTrackProgressTo(progress);
+        }
+
+        //Request current track broadcast
+        if(intent.getAction().equals(ACTION_BROADCAST_CURRENT_TRACK)) {
+            if(mCurrentTrack != null)
+                broadcastTrackToBePlayed();
         }
 
         return START_NOT_STICKY;
@@ -225,6 +268,30 @@ public class PlaybackService extends Service implements
         }
     }
 
+    private void pauseTrack() {
+        if(mMediaPlayer == null)
+            return;
+
+        mMediaPlayer.pause();
+
+        if(mBroadcastTrackProgressTask != null)
+            mBroadcastTrackProgressTask.cancel(true);
+
+        showNotification();
+    }
+
+    private void resumeTrack() {
+        if(mMediaPlayer == null)
+            return;
+
+        mMediaPlayer.start();
+
+        mBroadcastTrackProgressTask = new BroadcastTrackProgressTask();
+        mBroadcastTrackProgressTask.execute();
+
+        showNotification();
+    }
+
     private void setTrackProgressTo(int progress) {
         if(mMediaPlayer == null)
             broadcastTrackPlaybackCompleted();
@@ -240,7 +307,7 @@ public class PlaybackService extends Service implements
         TrackToBePlayedEvent event = new TrackToBePlayedEvent(mCurrentTrack);
         EventBus.getDefault().post(event);
 
-        showNotification(null);
+        showNotification();
     }
 
     private void broadcastTrackPlayingProgress() {
@@ -261,48 +328,75 @@ public class PlaybackService extends Service implements
     /**
      * Notifications
      */
-    private void showNotification(Bitmap thumbnailBitmap) {
+    private void showNotification() {
         //New Remote View
         RemoteViews remoteView = new RemoteViews(getPackageName(), R.layout.notification_playback);
-        if(Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT_WATCH) {
-            remoteView.setTextColor(R.id.track_name, Color.BLACK);
-            remoteView.setTextColor(R.id.artist_name, Color.BLACK);
-        }
         remoteView.setTextViewText(R.id.track_name, mCurrentTrack.name);
         remoteView.setTextViewText(R.id.artist_name, mCurrentTrack.artists.get(0).name);
 
+        //Playback controls
+        //Previous Track Intent
+        Intent playPreviousTrack = new Intent(this, PlaybackService.class);
+        playPreviousTrack.setAction(ACTION_PLAY_PREVIOUS_TRACK);
+        remoteView.setOnClickPendingIntent(
+                R.id.play_next_track,
+                PendingIntent.getService(this, 0, playPreviousTrack, 0)
+        );
+
+        //Resume/Pause
+        remoteView.setViewVisibility(R.id.pause_track, View.VISIBLE);
+        remoteView.setViewVisibility(R.id.resume_track, View.VISIBLE);
+        if(mMediaPlayer != null && mMediaPlayer.isPlaying()) {
+            remoteView.setViewVisibility(R.id.resume_track, View.GONE);
+            Intent pauseTrackIntent = new Intent(this, PlaybackService.class);
+            pauseTrackIntent.setAction(ACTION_PAUSE_TRACK);
+            remoteView.setOnClickPendingIntent(
+                    R.id.pause_track,
+                    PendingIntent.getService(this, 0, pauseTrackIntent, 0)
+            );
+        }
+        else {
+            remoteView.setViewVisibility(R.id.pause_track, View.GONE);
+            Intent resumeTrackIntent = new Intent(this, PlaybackService.class);
+            resumeTrackIntent.setAction(ACTION_RESUME_TRACK);
+            remoteView.setOnClickPendingIntent(
+                    R.id.resume_track,
+                    PendingIntent.getService(this, 0, resumeTrackIntent, 0)
+            );
+        }
+
+
+        //Next Track Intent
+        Intent playNextTrackIntent = new Intent(this, PlaybackService.class);
+        playNextTrackIntent.setAction(ACTION_PLAY_NEXT_TRACK);
+        remoteView.setOnClickPendingIntent(
+                R.id.play_next_track,
+                PendingIntent.getService(this, 0, playNextTrackIntent, 0)
+        );
+
+        //Content action
+        //Show App Intent
+        Intent showAppIntent = new Intent(this, ArtistSearchActivity.class);
+        showAppIntent.setAction(Intent.ACTION_MAIN);
+        showAppIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+        PendingIntent showAppPendingIntent = PendingIntent.getActivity(this, 0, showAppIntent, 0);
+
         //Prepare notification
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
-                .setSmallIcon(android.R.drawable.ic_dialog_map)
-                .setContent(remoteView);
+                .setSmallIcon(android.R.drawable.ic_media_play)
+                .setContent(remoteView)
+                .setContentIntent(showAppPendingIntent);
 
         //Display notification
         NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        notificationManager.notify(1000, notificationBuilder.build());
+        Notification notification = notificationBuilder.build();
+        notificationManager.notify(1000, notification);
 
-        /*
-        PendingIntent pendingIntent =
+        //Thumbnail
+        String thumbnailUrl = Utils.getThumbnailUrl(mCurrentTrack.album.images, 0);
+        if(thumbnailUrl != null)
+            Picasso.with(this).load(thumbnailUrl).into(remoteView, R.id.album_thumbnail, 1000, notification);
 
-// The stack builder object will contain an artificial back stack for the
-// started Activity.
-// This ensures that navigating backward from the Activity leads out of
-// your application to the Home screen.
-        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
-// Adds the back stack for the Intent (but not the Intent itself)
-        stackBuilder.addParentStack(ResultActivity.class);
-// Adds the Intent that starts the Activity to the top of the stack
-        stackBuilder.addNextIntent(resultIntent);
-        PendingIntent resultPendingIntent =
-                stackBuilder.getPendingIntent(
-                        0,
-                        PendingIntent.FLAG_UPDATE_CURRENT
-                );
-        mBuilder.setContentIntent(resultPendingIntent);
-        NotificationManager mNotificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-// mId allows you to update the notification later on.
-        mNotificationManager.notify(mId, mBuilder.build());
-        */
     }
 
 
@@ -338,11 +432,7 @@ public class PlaybackService extends Service implements
     @Override
     public void onPrepared(MediaPlayer mediaPlayer) {
         broadcastTrackToBePlayed();
-
-        mMediaPlayer.start();
-
-        mBroadcastTrackProgressTask = new BroadcastTrackProgressTask();
-        mBroadcastTrackProgressTask.execute();
+        resumeTrack();
     }
 
     @Override

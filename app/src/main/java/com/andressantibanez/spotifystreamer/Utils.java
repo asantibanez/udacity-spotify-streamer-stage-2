@@ -29,7 +29,7 @@ public class Utils {
     }
 
     public static String millisecondsToMMSS(long milliseconds) {
-        return String.format("%d:%d",
+        return String.format("%d:%02d",
                 TimeUnit.MILLISECONDS.toMinutes(milliseconds),
                 TimeUnit.MILLISECONDS.toSeconds(milliseconds) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(milliseconds))
         );

@@ -7,7 +7,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
@@ -19,8 +18,6 @@ import com.andressantibanez.spotifystreamer.tracksplayback.events.TrackPlaybackC
 import com.andressantibanez.spotifystreamer.tracksplayback.events.TrackPlayingProgressEvent;
 import com.andressantibanez.spotifystreamer.tracksplayback.events.TrackToBePlayedEvent;
 import com.squareup.picasso.Picasso;
-
-import java.util.concurrent.TimeUnit;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
@@ -36,21 +33,23 @@ public class TracksPlaybackFragment extends DialogFragment {
 
     //Variables
     Track mCurrentTrack;
-    int mMaxProgress;
     boolean mTrackProgressAutoUpdate;
     int mTrackProgressByUser;
+    int mTrackProgress;
+    int mTrackLength;
+    boolean mIsPaused;
 
     //Controls
-    @InjectView(R.id.artist_name) TextView mArtistName;
-    @InjectView(R.id.album_name) TextView mAlbumName;
-    @InjectView(R.id.track_name) TextView mTrackName;
-    @InjectView(R.id.track_progress) SeekBar mTrackProgress;
-    @InjectView(R.id.play_previous_track) ImageButton mPlayPreviousTrack;
-    @InjectView(R.id.play_track) ImageButton mPlayTrack;
-    @InjectView(R.id.play_next_track) ImageButton mPlayNextTrack;
-    @InjectView(R.id.album_thumbnail) ImageView mThumbnail;
-    @InjectView(R.id.track_position) TextView mTrackPosition;
-    @InjectView(R.id.track_length) TextView mTrackLength;
+    @InjectView(R.id.artist_name) TextView mArtistNameTextView;
+    @InjectView(R.id.album_name) TextView mAlbumNameTextView;
+    @InjectView(R.id.track_name) TextView mTrackNameTextView;
+    @InjectView(R.id.track_progress) SeekBar mTrackProgressSeekBar;
+    @InjectView(R.id.play_previous_track) ImageButton mPlayPreviousTrackButton;
+    @InjectView(R.id.play_track) ImageButton mPlayTrackButton;
+    @InjectView(R.id.play_next_track) ImageButton mPlayNextTrackButton;
+    @InjectView(R.id.album_thumbnail) ImageView mThumbnailImageView;
+    @InjectView(R.id.track_position) TextView mTrackProgressTextView;
+    @InjectView(R.id.track_length) TextView mTrackLengthTextView;
 
     /**
      * Factory method
@@ -77,24 +76,37 @@ public class TracksPlaybackFragment extends DialogFragment {
         ButterKnife.inject(this, view);
 
         mTrackProgressAutoUpdate = true;
+        mIsPaused = true;
 
         //Setup listeners
-        mPlayPreviousTrack.setOnClickListener(new View.OnClickListener() {
+        mPlayTrackButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(!mIsPaused)
+                    PlaybackService.pauseTrack(getActivity());
+                else
+                    PlaybackService.resumeTrack(getActivity());
+
+                mIsPaused = !mIsPaused;
+                updatePlayTrackButton();
+            }
+        });
+        mPlayPreviousTrackButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 PlaybackService.playPreviousTrack(getActivity());
             }
         });
-        mPlayNextTrack.setOnClickListener(new View.OnClickListener() {
+        mPlayNextTrackButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 PlaybackService.playNextTrack(getActivity());
             }
         });
-        mTrackProgress.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        mTrackProgressSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if(fromUser)
+                if (fromUser)
                     mTrackProgressByUser = progress;
             }
 
@@ -119,6 +131,9 @@ public class TracksPlaybackFragment extends DialogFragment {
             String trackToPlayId = getArguments().getString(TRACK_TO_PLAY_ID, null);
             if(trackToPlayId != null)
                 PlaybackService.playTrack(getActivity(), trackToPlayId);
+        } else {
+            //Request current track broadcast
+            PlaybackService.broadcastCurrentTrack(getActivity());
         }
 
         return view;
@@ -143,6 +158,13 @@ public class TracksPlaybackFragment extends DialogFragment {
     /**
      * Events handling
      */
+    public void updatePlayTrackButton() {
+        if(mIsPaused)
+            mPlayTrackButton.setImageResource(android.R.drawable.ic_media_play);
+        else
+            mPlayTrackButton.setImageResource(android.R.drawable.ic_media_pause);
+    }
+
     public void updateCurrentTrack(Track track) {
         if(mCurrentTrack == null || !mCurrentTrack.id.equals(track.id)) {
             mCurrentTrack = track;
@@ -152,26 +174,40 @@ public class TracksPlaybackFragment extends DialogFragment {
 
     public void onEventMainThread(TrackToBePlayedEvent event) {
         updateCurrentTrack(event.getTrack());
+
+        mIsPaused = true;
+        updatePlayTrackButton();
     }
 
     public void onEventMainThread(TrackPlayingProgressEvent event) {
         updateCurrentTrack(event.getTrack());
         setTrackProgress(event.getProgress());
         setTrackMaxProgress(event.getMaxProgress());
+
+        mIsPaused = false;
+        updatePlayTrackButton();
     }
 
     public void onEventMainThread(TrackPlaybackCompletedEvent event) {
         updateCurrentTrack(event.getTrack());
-        mTrackProgress.setProgress(0);
-        mTrackPosition.setText(Utils.millisecondsToMMSS(0));
+
+        mIsPaused = true;
+        updatePlayTrackButton();
+
+        setTrackProgress(mTrackLength);
     }
 
     private void displayTrackInfo() {
-        mArtistName.setText(mCurrentTrack.artists.get(0).name);
-        mAlbumName.setText(mCurrentTrack.album.name);
-        mTrackName.setText(mCurrentTrack.name);
-        mTrackProgress.setProgress(0);
-        mMaxProgress = 0;
+        mTrackProgress = 0;
+        mTrackLength = 0;
+
+
+        mArtistNameTextView.setText(mCurrentTrack.artists.get(0).name);
+        mAlbumNameTextView.setText(mCurrentTrack.album.name);
+        mTrackNameTextView.setText(mCurrentTrack.name);
+        mTrackProgressSeekBar.setProgress(0);
+        mTrackProgressTextView.setText(Utils.millisecondsToMMSS(mTrackProgress));
+        mTrackLengthTextView.setText(" - ");
 
         String thumbnailUrl;
 
@@ -183,27 +219,29 @@ public class TracksPlaybackFragment extends DialogFragment {
             thumbnailUrl = Utils.getThumbnailUrl(mCurrentTrack.album.images, 0);
 
 
-        mThumbnail.setImageBitmap(null);
+        mThumbnailImageView.setImageBitmap(null);
         if(thumbnailUrl != null)
-            Picasso.with(getActivity()).load(thumbnailUrl).into(mThumbnail);
+            Picasso.with(getActivity()).load(thumbnailUrl).into(mThumbnailImageView);
     }
 
     private void setTrackProgress(int progress) {
         if(!mTrackProgressAutoUpdate)
             return;
 
-        mTrackProgress.setProgress(progress);
-        mTrackPosition.setText(Utils.millisecondsToMMSS(progress));
+        mTrackProgress = progress;
+
+        mTrackProgressSeekBar.setProgress(progress);
+        mTrackProgressTextView.setText(Utils.millisecondsToMMSS(progress));
     }
 
     private void setTrackMaxProgress(int maxProgress) {
-        if(mMaxProgress == maxProgress)
+        if(mTrackLength == maxProgress)
             return;
 
-        mMaxProgress = maxProgress;
-        mTrackProgress.setMax(maxProgress);
-        mTrackLength.setText(Utils.millisecondsToMMSS(maxProgress));
+        mTrackLength = maxProgress;
 
+        mTrackProgressSeekBar.setMax(maxProgress);
+        mTrackLengthTextView.setText(Utils.millisecondsToMMSS(maxProgress));
     }
 
 }
