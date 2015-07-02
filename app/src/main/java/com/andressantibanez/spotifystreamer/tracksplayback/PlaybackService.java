@@ -225,7 +225,7 @@ public class PlaybackService extends Service implements
 
     private void playPreviousTrack() {
         int previousTrackIndex = mCurrentTrackIndex - 1;
-        if(previousTrackIndex < 0)
+        if(mTracksList == null || previousTrackIndex < 0)
             return;
 
         Track track = mTracksList.get(previousTrackIndex);
@@ -235,7 +235,7 @@ public class PlaybackService extends Service implements
     private void playNextTrack() {
         int nextTrackIndex = mCurrentTrackIndex + 1;
 
-        if(nextTrackIndex >= mTracksList.size())
+        if(mTracksList == null || nextTrackIndex >= mTracksList.size())
             return;
 
         Track track = mTracksList.get(nextTrackIndex);
@@ -338,50 +338,16 @@ public class PlaybackService extends Service implements
     private void broadcastTrackPlaybackCompleted() {
         TrackPlaybackCompletedEvent event = new TrackPlaybackCompletedEvent(mCurrentTrack);
         EventBus.getDefault().post(event);
+
+        showNotification();
     }
 
 
     /**
      * Notifications
      */
-    private void showNotification() {
+    private void showNotificationUsingCustomLayout() {
 
-        Log.d(TAG, "Displaying notification");
-
-        //Build notification
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this);
-        notificationBuilder.setContentTitle(mCurrentTrack.name);
-        notificationBuilder.setContentText(mCurrentTrack.artists.get(0).name);
-        notificationBuilder.setSmallIcon(android.R.drawable.ic_media_play);
-        notificationBuilder.addAction(
-                android.R.drawable.ic_media_previous,
-                "Previous",
-                PendingIntent.getService(this, 0, getPlayPreviousTrackIntent(this), 0)
-        );
-        notificationBuilder.addAction(
-                android.R.drawable.ic_media_next,
-                "Next",
-                PendingIntent.getService(this, 0, getPlayNextTrackIntent(this), 0)
-        );
-
-        //Show App Intent
-        Intent showAppIntent = new Intent(this, ArtistSearchActivity.class);
-        showAppIntent.setAction(Intent.ACTION_MAIN);
-        showAppIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-        notificationBuilder.setContentIntent(PendingIntent.getActivity(this, 0, showAppIntent, 0));
-
-        //Display notification
-        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        Notification notification = notificationBuilder.build();
-        notificationManager.notify(3000, notification);
-
-        //Show thumbnail if available
-        String thumbnailUrl = Utils.getThumbnailUrl(mCurrentTrack.album.images, 0);
-        if(thumbnailUrl != null) {
-
-        }
-
-        /*
         //New Remote View
         RemoteViews remoteView = new RemoteViews(getPackageName(), R.layout.notification_playback);
         remoteView.setTextViewText(R.id.track_name, mCurrentTrack.name);
@@ -389,11 +355,9 @@ public class PlaybackService extends Service implements
 
         //Playback controls
         //Previous Track Intent
-        Intent playPreviousTrack = new Intent(this, PlaybackService.class);
-        playPreviousTrack.setAction(ACTION_PLAY_PREVIOUS_TRACK);
         remoteView.setOnClickPendingIntent(
-                R.id.play_next_track,
-                PendingIntent.getService(this, 0, playPreviousTrack, 0)
+                R.id.play_previous_track,
+                PendingIntent.getService(this, 0, getPlayPreviousTrackIntent(this), 0)
         );
 
         //Resume/Pause
@@ -401,30 +365,24 @@ public class PlaybackService extends Service implements
         remoteView.setViewVisibility(R.id.resume_track, View.VISIBLE);
         if(mMediaPlayer != null && mMediaPlayer.isPlaying()) {
             remoteView.setViewVisibility(R.id.resume_track, View.GONE);
-            Intent pauseTrackIntent = new Intent(this, PlaybackService.class);
-            pauseTrackIntent.setAction(ACTION_PAUSE_TRACK);
             remoteView.setOnClickPendingIntent(
                     R.id.pause_track,
-                    PendingIntent.getService(this, 0, pauseTrackIntent, 0)
+                    PendingIntent.getService(this, 0, getPauseTrackIntent(this), 0)
             );
         }
         else {
             remoteView.setViewVisibility(R.id.pause_track, View.GONE);
-            Intent resumeTrackIntent = new Intent(this, PlaybackService.class);
-            resumeTrackIntent.setAction(ACTION_RESUME_TRACK);
             remoteView.setOnClickPendingIntent(
                     R.id.resume_track,
-                    PendingIntent.getService(this, 0, resumeTrackIntent, 0)
+                    PendingIntent.getService(this, 0, getResumeTrackIntent(this), 0)
             );
         }
 
 
         //Next Track Intent
-        Intent playNextTrackIntent = new Intent(this, PlaybackService.class);
-        playNextTrackIntent.setAction(ACTION_PLAY_NEXT_TRACK);
         remoteView.setOnClickPendingIntent(
                 R.id.play_next_track,
-                PendingIntent.getService(this, 0, playNextTrackIntent, 0)
+                PendingIntent.getService(this, 0, getPlayNextTrackIntent(this), 0)
         );
 
         //Content action
@@ -440,16 +398,84 @@ public class PlaybackService extends Service implements
                 .setContent(remoteView)
                 .setContentIntent(showAppPendingIntent);
 
+        //Check if ongoing notification
+        notificationBuilder.setOngoing(mMediaPlayer != null && mMediaPlayer.isPlaying());
+        if(Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT_WATCH) {
+            notificationBuilder.setVisibility(Notification.VISIBILITY_PUBLIC);
+        }
+
         //Display notification
         NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         Notification notification = notificationBuilder.build();
-        notificationManager.notify(1000, notification);
+        notificationManager.notify(3000, notification);
 
         //Thumbnail
         String thumbnailUrl = Utils.getThumbnailUrl(mCurrentTrack.album.images, 0);
         if(thumbnailUrl != null)
-            Picasso.with(this).load(thumbnailUrl).into(remoteView, R.id.album_thumbnail, 1000, notification);
-        */
+            Picasso.with(this).load(thumbnailUrl).into(remoteView, R.id.album_thumbnail, 3000, notification);
+    }
+
+    private void showNotificationUsingCompat() {
+
+        //Build notification
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this);
+        notificationBuilder.setContentTitle(mCurrentTrack.name);
+        notificationBuilder.setContentText(mCurrentTrack.artists.get(0).name);
+        notificationBuilder.setSmallIcon(android.R.drawable.ic_media_play);
+        if(Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT_WATCH) {
+            notificationBuilder.setVisibility(Notification.VISIBILITY_PUBLIC);
+        }
+
+        //Playback controls
+        //Previous track action
+        notificationBuilder.addAction(
+                android.R.drawable.ic_media_previous,
+                "Previous",
+                PendingIntent.getService(this, 0, getPlayPreviousTrackIntent(this), 0)
+        );
+        //Pause / Resume track action
+        if(mMediaPlayer != null && mMediaPlayer.isPlaying()) {
+            notificationBuilder.addAction(
+                    android.R.drawable.ic_media_pause,
+                    "Pause",
+                    PendingIntent.getService(this, 0, getPauseTrackIntent(this), 0)
+            );
+        } else {
+            notificationBuilder.addAction(
+                    android.R.drawable.ic_media_play,
+                    "Resume",
+                    PendingIntent.getService(this, 0, getResumeTrackIntent(this), 0)
+            );
+        }
+        //Next track action
+        notificationBuilder.addAction(
+                android.R.drawable.ic_media_next,
+                "Next",
+                PendingIntent.getService(this, 0, getPlayNextTrackIntent(this), 0)
+        );
+
+        //Check if ongoing notification
+        notificationBuilder.setOngoing(mMediaPlayer != null && mMediaPlayer.isPlaying());
+
+        //Show App Intent
+        Intent showAppIntent = new Intent(this, ArtistSearchActivity.class);
+        showAppIntent.setAction(Intent.ACTION_MAIN);
+        showAppIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+        notificationBuilder.setContentIntent(PendingIntent.getActivity(this, 0, showAppIntent, 0));
+
+        //Display notification
+        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        Notification notification = notificationBuilder.build();
+        notificationManager.notify(3000, notification);
+
+        //Show thumbnail if available
+        String thumbnailUrl = Utils.getThumbnailUrl(mCurrentTrack.album.images, 0);
+    }
+
+    private void showNotification() {
+        Log.d(TAG, "Displaying notification");
+        showNotificationUsingCustomLayout();
+        //showNotificationUsingCompat();
     }
 
 

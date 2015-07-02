@@ -27,6 +27,8 @@
             android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="@color/white"
+            android:maxLines="2"
+            android:ellipsize="end"
             tools:text="Come As You Are"/>
 
         <TextView
@@ -35,6 +37,8 @@
             android:layout_height="wrap_content"
             android:textSize="14sp"
             android:textColor="@color/white"
+            android:ellipsize="end"
+            android:maxLines="1"
             tools:text="Nirvana"/>
 
     </LinearLayout>
