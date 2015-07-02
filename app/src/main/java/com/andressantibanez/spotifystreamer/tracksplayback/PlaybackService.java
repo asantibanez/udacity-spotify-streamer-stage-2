@@ -95,27 +95,43 @@ public class PlaybackService extends Service implements
     }
 
     public static void pauseTrack(Context context) {
+        context.startService(getPauseTrackIntent(context));
+    }
+
+    public static Intent getPauseTrackIntent(Context context) {
         Intent serviceIntent = new Intent(context, PlaybackService.class);
         serviceIntent.setAction(ACTION_PAUSE_TRACK);
-        context.startService(serviceIntent);
+        return serviceIntent;
     }
 
     public static void resumeTrack(Context context) {
+        context.startService(getResumeTrackIntent(context));
+    }
+
+    public static Intent getResumeTrackIntent(Context context) {
         Intent serviceIntent = new Intent(context, PlaybackService.class);
         serviceIntent.setAction(ACTION_RESUME_TRACK);
-        context.startService(serviceIntent);
+        return serviceIntent;
     }
 
     public static void playNextTrack(Context context) {
+        context.startService(getPlayNextTrackIntent(context));
+    }
+
+    public static Intent getPlayNextTrackIntent(Context context) {
         Intent serviceIntent = new Intent(context, PlaybackService.class);
         serviceIntent.setAction(ACTION_PLAY_NEXT_TRACK);
-        context.startService(serviceIntent);
+        return serviceIntent;
     }
 
     public static void playPreviousTrack(Context context) {
+        context.startService(getPlayPreviousTrackIntent(context));
+    }
+
+    public static Intent getPlayPreviousTrackIntent(Context context) {
         Intent serviceIntent = new Intent(context, PlaybackService.class);
         serviceIntent.setAction(ACTION_PLAY_PREVIOUS_TRACK);
-        context.startService(serviceIntent);
+        return serviceIntent;
     }
 
     public static void setTrackProgressTo(Context context, int progress) {
@@ -329,6 +345,43 @@ public class PlaybackService extends Service implements
      * Notifications
      */
     private void showNotification() {
+
+        Log.d(TAG, "Displaying notification");
+
+        //Build notification
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this);
+        notificationBuilder.setContentTitle(mCurrentTrack.name);
+        notificationBuilder.setContentText(mCurrentTrack.artists.get(0).name);
+        notificationBuilder.setSmallIcon(android.R.drawable.ic_media_play);
+        notificationBuilder.addAction(
+                android.R.drawable.ic_media_previous,
+                "Previous",
+                PendingIntent.getService(this, 0, getPlayPreviousTrackIntent(this), 0)
+        );
+        notificationBuilder.addAction(
+                android.R.drawable.ic_media_next,
+                "Next",
+                PendingIntent.getService(this, 0, getPlayNextTrackIntent(this), 0)
+        );
+
+        //Show App Intent
+        Intent showAppIntent = new Intent(this, ArtistSearchActivity.class);
+        showAppIntent.setAction(Intent.ACTION_MAIN);
+        showAppIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+        notificationBuilder.setContentIntent(PendingIntent.getActivity(this, 0, showAppIntent, 0));
+
+        //Display notification
+        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        Notification notification = notificationBuilder.build();
+        notificationManager.notify(3000, notification);
+
+        //Show thumbnail if available
+        String thumbnailUrl = Utils.getThumbnailUrl(mCurrentTrack.album.images, 0);
+        if(thumbnailUrl != null) {
+
+        }
+
+        /*
         //New Remote View
         RemoteViews remoteView = new RemoteViews(getPackageName(), R.layout.notification_playback);
         remoteView.setTextViewText(R.id.track_name, mCurrentTrack.name);
@@ -396,7 +449,7 @@ public class PlaybackService extends Service implements
         String thumbnailUrl = Utils.getThumbnailUrl(mCurrentTrack.album.images, 0);
         if(thumbnailUrl != null)
             Picasso.with(this).load(thumbnailUrl).into(remoteView, R.id.album_thumbnail, 1000, notification);
-
+        */
     }
 
 
