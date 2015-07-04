@@ -72,7 +72,7 @@ public class BaseActivity extends AppCompatActivity {
         String shareCurrentTrackText = "I'm listening to " + currentTrack.name + " by " + currentTrack.artists.get(0).name + " via Spotify Streamer App";
         String externalUrl = currentTrack.external_urls.get("spotify");
         if(externalUrl != null)
-            shareCurrentTrackText += " (" + externalUrl + ")";
+            shareCurrentTrackText += " ( " + externalUrl + " )";
 
         Log.d(TAG, shareCurrentTrackText);
 
