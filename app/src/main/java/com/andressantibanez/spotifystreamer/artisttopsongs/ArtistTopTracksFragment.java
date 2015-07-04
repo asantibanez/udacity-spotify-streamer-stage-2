@@ -1,8 +1,10 @@
 package com.andressantibanez.spotifystreamer.artisttopsongs;
 
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -37,6 +39,7 @@ public class ArtistTopTracksFragment extends Fragment {
     private static final String ARTIST_NAME = "artist_name";
     private static final String TOP_TRACKS_RESULTS = "top_tracks_results";
     private static final String SEARCH_DONE = "search_done";
+    private static final String PREF_COUNTRY_FOR_RESULTS = "pref_country_for_results";
 
     //Variables
     boolean mSearchDone;
@@ -189,8 +192,10 @@ public class ArtistTopTracksFragment extends Fragment {
         protected List<Track> doInBackground(String... strings) {
             String artistId = strings[0];
 
+            //Get Country for results preference
+            SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
             Map<String, Object> options = new HashMap<>();
-            options.put("country", "US");
+            options.put("country", sharedPreferences.getString(PREF_COUNTRY_FOR_RESULTS, "US"));
 
             try {
                 SpotifyApi api = new SpotifyApi();

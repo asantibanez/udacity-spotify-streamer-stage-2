@@ -9,8 +9,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
 
 import com.andressantibanez.spotifystreamer.R;
+import com.andressantibanez.spotifystreamer.common.BaseActivity;
 
-public class TracksPlaybackActivity extends AppCompatActivity {
+import de.greenrobot.event.EventBus;
+
+public class TracksPlaybackActivity extends BaseActivity {
 
     public static final String TAG = TracksPlaybackActivity.class.getSimpleName();
 
@@ -48,6 +51,14 @@ public class TracksPlaybackActivity extends AppCompatActivity {
 
         ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayHomeAsUpEnabled(true);
+
+        EventBus.getDefault().register(this);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        EventBus.getDefault().unregister(this);
     }
 
     /**
@@ -63,5 +74,18 @@ public class TracksPlaybackActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    /**
+     * BaseActivity implementation
+     */
+    @Override
+    public boolean displayNowPlayingMenuItem() {
+        return false;
+    }
+
+    @Override
+    public boolean displayPreferencesMenuItem() {
+        return false;
     }
 }

@@ -31,6 +31,7 @@ dependencies {
     //Support Libraries
     compile 'com.android.support:appcompat-v7:22.2.0'
     compile 'com.android.support:design:22.2.0'
+    compile 'com.android.support:support-v4:22.2.0'
 
     //Gson
     compile 'com.google.code.gson:gson:2.3'
@@ -39,7 +40,7 @@ dependencies {
     compile 'com.jakewharton:butterknife:6.1.0'
 
     //Spotify Wrapper
-    compile(name:'spotify-web-api-android-0.1.0', ext:'aar')
+    compile( name:'spotify-web-api-android-0.1.0', ext:'aar')
 
     //Event Bus
     compile 'de.greenrobot:eventbus:2.4.0'

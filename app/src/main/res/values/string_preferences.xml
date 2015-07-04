@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Country for results -->
+    <string name="pref_country_for_results_title">Country for results</string>
+    <string-array name="pref_country_entries">
+        <item>Ecuador</item>
+        <item>United States</item>
+    </string-array>
+    <string-array name="pref_country_entryValues">
+        <item>EC</item>
+        <item>US</item>
+    </string-array>
+
+    <!-- Show notification in lockscreen -->
+    <string name="pref_show_playback_controls_in_lockscreen_title">Playback notification</string>
+    <string name="pref_show_playback_controls_in_lockscreen_summary">Show playback controls in lockscreen</string>
+</resources>

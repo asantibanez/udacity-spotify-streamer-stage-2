@@ -3,6 +3,8 @@
 
     <string name="search_artist">Search Artist</string>
     <string name="top_ten_tracks">Top 10 Tracks</string>
+    <string name="preferences">Preferences</string>
+
     <string name="no_artists_found">No artists found. Try searching with another name.</string>
     <string name="network_error_try_again">Error retrieving data. Please check your network status and try again.</string>
     <string name="no_top_tracks_found">No Top Tracks found for Artist.</string>
@@ -18,5 +20,7 @@
     <string name="play">Play</string>
     <string name="next">Next</string>
     <string name="now_playing">Now Playing</string>
+    <string name="share_current_track">Share current track</string>
+    <string name="share_using">Share using</string>
 
 </resources>

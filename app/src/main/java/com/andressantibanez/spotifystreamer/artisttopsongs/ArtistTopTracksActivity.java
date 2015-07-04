@@ -13,6 +13,7 @@ import android.view.MenuItem;
 import android.widget.FrameLayout;
 
 import com.andressantibanez.spotifystreamer.R;
+import com.andressantibanez.spotifystreamer.common.BaseActivity;
 import com.andressantibanez.spotifystreamer.tracksplayback.PlaybackService;
 import com.andressantibanez.spotifystreamer.tracksplayback.TracksPlaybackActivity;
 import com.andressantibanez.spotifystreamer.tracksplayback.TracksPlaybackFragment;
@@ -28,8 +29,8 @@ import de.greenrobot.event.EventBus;
 import kaaes.spotify.webapi.android.models.Track;
 
 
-public class ArtistTopTracksActivity extends AppCompatActivity
-        implements ArtistTopTracksFragment.InteractionListener {
+public class ArtistTopTracksActivity extends BaseActivity implements
+        ArtistTopTracksFragment.InteractionListener {
 
     public static final String TAG = ArtistTopTracksActivity.class.getSimpleName();
 
@@ -40,9 +41,6 @@ public class ArtistTopTracksActivity extends AppCompatActivity
     //Variables
     String mArtistId;
     String mArtistName;
-
-    //Controls
-    MenuItem mNowPlayingMenuItem;
 
     /**
      * Intent factory
@@ -93,17 +91,6 @@ public class ArtistTopTracksActivity extends AppCompatActivity
      * Menu methods
      */
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater menuInflater = getMenuInflater();
-        menuInflater.inflate(R.menu.menu_activity_artist_top_tracks, menu);
-
-        mNowPlayingMenuItem = menu.findItem(R.id.action_now_playing);
-        mNowPlayingMenuItem.setVisible(false);
-
-        return true;
-    }
-
-    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
 
@@ -132,13 +119,10 @@ public class ArtistTopTracksActivity extends AppCompatActivity
 
 
     /**
-     * Event handling
+     * BaseActivity implementation
      */
-    public void onEventMainThread(TrackPlayingProgressEvent event) {
-        mNowPlayingMenuItem.setVisible(true);
-    }
-
-    public void onEventMainThread(TrackPlaybackCompletedEvent event) {
-        mNowPlayingMenuItem.setVisible(false);
+    @Override
+    public boolean displayPreferencesMenuItem() {
+        return false;
     }
 }

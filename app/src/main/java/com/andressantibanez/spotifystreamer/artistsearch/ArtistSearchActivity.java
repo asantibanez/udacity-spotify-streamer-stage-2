@@ -1,5 +1,6 @@
 package com.andressantibanez.spotifystreamer.artistsearch;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
@@ -11,6 +12,8 @@ import android.widget.FrameLayout;
 import com.andressantibanez.spotifystreamer.R;
 import com.andressantibanez.spotifystreamer.artisttopsongs.ArtistTopTracksActivity;
 import com.andressantibanez.spotifystreamer.artisttopsongs.ArtistTopTracksFragment;
+import com.andressantibanez.spotifystreamer.common.BaseActivity;
+import com.andressantibanez.spotifystreamer.preferences.PreferencesActivity;
 import com.andressantibanez.spotifystreamer.tracksplayback.PlaybackService;
 import com.andressantibanez.spotifystreamer.tracksplayback.TracksPlaybackActivity;
 import com.andressantibanez.spotifystreamer.tracksplayback.TracksPlaybackFragment;
@@ -25,8 +28,8 @@ import butterknife.Optional;
 import de.greenrobot.event.EventBus;
 import kaaes.spotify.webapi.android.models.Track;
 
-public class ArtistSearchActivity extends AppCompatActivity
-        implements ArtistSearchFragment.InteractionListener,
+public class ArtistSearchActivity extends BaseActivity implements
+        ArtistSearchFragment.InteractionListener,
         ArtistTopTracksFragment.InteractionListener {
 
     static final String TAG = ArtistSearchActivity.class.getSimpleName();
@@ -36,7 +39,6 @@ public class ArtistSearchActivity extends AppCompatActivity
 
     //Controls
     @Optional @InjectView(R.id.fragment_artist_top_tracks) FrameLayout container;
-    MenuItem mNowPlayingMenuItem;
 
     /**
      * Lifecycle methods
@@ -67,18 +69,8 @@ public class ArtistSearchActivity extends AppCompatActivity
      * Menu methods
      */
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater menuInflater = getMenuInflater();
-        menuInflater.inflate(R.menu.menu_activity_artist_search, menu);
-
-        mNowPlayingMenuItem = menu.findItem(R.id.action_now_playing);
-        mNowPlayingMenuItem.setVisible(false);
-
-        return true;
-    }
-
-    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        //Now Playing
         if(item.getItemId() == R.id.action_now_playing) {
             if(mTwoPane) {
                 showTrackPlaybackFragment(null);
@@ -86,6 +78,12 @@ public class ArtistSearchActivity extends AppCompatActivity
                 TracksPlaybackActivity.launch(this, null);
             }
 
+            return true;
+        }
+
+        //Preferences
+        if(item.getItemId() == R.id.action_edit_preferences) {
+            startActivity(new Intent(this, PreferencesActivity.class));
             return true;
         }
 
@@ -122,18 +120,6 @@ public class ArtistSearchActivity extends AppCompatActivity
     public void showTrackPlaybackFragment(String trackId) {
         TracksPlaybackFragment fragment = TracksPlaybackFragment.newInstance(trackId);
         fragment.show(getSupportFragmentManager(), "dialog");
-    }
-
-
-    /**
-     * Event handling
-     */
-    public void onEventMainThread(TrackPlayingProgressEvent event) {
-        mNowPlayingMenuItem.setVisible(true);
-    }
-
-    public void onEventMainThread(TrackPlaybackCompletedEvent event) {
-        mNowPlayingMenuItem.setVisible(false);
     }
 
 }

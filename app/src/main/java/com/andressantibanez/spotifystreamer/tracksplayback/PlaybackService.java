@@ -6,6 +6,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.media.AudioManager;
@@ -13,6 +14,7 @@ import android.media.MediaPlayer;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
@@ -21,6 +23,7 @@ import android.widget.RemoteViews;
 import android.widget.Toast;
 
 import com.andressantibanez.spotifystreamer.R;
+import com.andressantibanez.spotifystreamer.SpotifyStreamerApp;
 import com.andressantibanez.spotifystreamer.Utils;
 import com.andressantibanez.spotifystreamer.artistsearch.ArtistSearchActivity;
 import com.andressantibanez.spotifystreamer.tracksplayback.events.TrackPlaybackCompletedEvent;
@@ -58,11 +61,13 @@ public class PlaybackService extends Service implements
     public static final String ACTION_SET_TRACKS = "action_add_tracks";
     public static final String ACTION_SET_TRACK_PROGRESS_TO = "action_set_track_progress_to";
     public static final String ACTION_BROADCAST_CURRENT_TRACK = "action_broadcast_current_track";
+    public static final int NOTIFICATION_ID = 3000;
 
     //Constants
     private static final String TRACKS_LIST = "tracks_list";
     private static final String TRACK_ID = "track_id";
     private static final String TRACK_PROGRESS = "track_progress";
+    private static final String PREF_SHOW_PLAYBACK_CONTROLS_IN_LOCKSCREEN = "pref_show_playback_controls_in_lockscreen";
 
     //Variables
     Track mCurrentTrack;
@@ -159,6 +164,15 @@ public class PlaybackService extends Service implements
     /**
      * Custom methods
      */
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+
+        //Cancel notification
+        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        notificationManager.cancel(NOTIFICATION_ID);
+    }
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
@@ -269,6 +283,10 @@ public class PlaybackService extends Service implements
 
         //Notify track to be played
         broadcastTrackToBePlayed();
+
+        //Set current track in app
+        SpotifyStreamerApp app = (SpotifyStreamerApp) getApplication();
+        app.setCurrentTrack(mCurrentTrack);
 
         //Start Media Player
         mMediaPlayer = new MediaPlayer();
@@ -400,19 +418,23 @@ public class PlaybackService extends Service implements
 
         //Check if ongoing notification
         notificationBuilder.setOngoing(mMediaPlayer != null && mMediaPlayer.isPlaying());
-        if(Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT_WATCH) {
+
+        //Show playback controls in lockscreen
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        boolean showPlaybackControlsInLockScreen = sharedPreferences.getBoolean(PREF_SHOW_PLAYBACK_CONTROLS_IN_LOCKSCREEN, true);
+        if(Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT_WATCH && showPlaybackControlsInLockScreen) {
             notificationBuilder.setVisibility(Notification.VISIBILITY_PUBLIC);
         }
 
         //Display notification
         NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         Notification notification = notificationBuilder.build();
-        notificationManager.notify(3000, notification);
+        notificationManager.notify(NOTIFICATION_ID, notification);
 
         //Thumbnail
         String thumbnailUrl = Utils.getThumbnailUrl(mCurrentTrack.album.images, 0);
         if(thumbnailUrl != null)
-            Picasso.with(this).load(thumbnailUrl).into(remoteView, R.id.album_thumbnail, 3000, notification);
+            Picasso.with(this).load(thumbnailUrl).into(remoteView, R.id.album_thumbnail, NOTIFICATION_ID, notification);
     }
 
     private void showNotificationUsingCompat() {
@@ -422,7 +444,11 @@ public class PlaybackService extends Service implements
         notificationBuilder.setContentTitle(mCurrentTrack.name);
         notificationBuilder.setContentText(mCurrentTrack.artists.get(0).name);
         notificationBuilder.setSmallIcon(android.R.drawable.ic_media_play);
-        if(Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT_WATCH) {
+
+        //Show playback controls in lockscreen
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        boolean showPlaybackControlsInLockScreen = sharedPreferences.getBoolean(PREF_SHOW_PLAYBACK_CONTROLS_IN_LOCKSCREEN, true);
+        if(Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT_WATCH && showPlaybackControlsInLockScreen) {
             notificationBuilder.setVisibility(Notification.VISIBILITY_PUBLIC);
         }
 
@@ -466,7 +492,7 @@ public class PlaybackService extends Service implements
         //Display notification
         NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         Notification notification = notificationBuilder.build();
-        notificationManager.notify(3000, notification);
+        notificationManager.notify(NOTIFICATION_ID, notification);
 
         //Show thumbnail if available
         String thumbnailUrl = Utils.getThumbnailUrl(mCurrentTrack.album.images, 0);
